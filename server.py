@@ -185,30 +185,38 @@ def predict_ia():
     })
 
 @app.route("/api/export/<tipo>")
-def export(tipo):
+def exportar(tipo):
     buffer = io.BytesIO()
-    df1 = pd.DataFrame(pacientes)
-    df2 = pd.DataFrame(medicos)
-    df3 = pd.DataFrame(citas)
+    df_pacientes = pd.DataFrame(pacientes)
+    df_medicos = pd.DataFrame(medicos)
+    df_citas = pd.DataFrame(citas)
 
     if tipo == "excel":
         with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-            df1.to_excel(writer, index=False, sheet_name="Pacientes")
-            df2.to_excel(writer, index=False, sheet_name="Medicos")
-            df3.to_excel(writer, index=False, sheet_name="Citas")
+            df_pacientes.to_excel(writer, index=False, sheet_name="Pacientes")
+            df_medicos.to_excel(writer, index=False, sheet_name="Medicos")
+            df_citas.to_excel(writer, index=False, sheet_name="Citas")
         buffer.seek(0)
-        return send_file(buffer, as_attachment=True, download_name="hospital_datos.xlsx")
+        return send_file(buffer, as_attachment=True,
+                         download_name="hospital_datos.xlsx",
+                         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
     elif tipo == "csv":
-        csv = io.StringIO()
-        df1.to_csv(csv, index=False)
-        df2.to_csv(csv, index=False)
-        df3.to_csv(csv, index=False)
-        csv.seek(0)
-        return send_file(io.BytesIO(csv.getvalue().encode("utf-8")),
+        csv_data = io.StringIO()
+        csv_data.write("=== PACIENTES ===\n")
+        df_pacientes.to_csv(csv_data, index=False)
+        csv_data.write("\n=== MÉDICOS ===\n")
+        df_medicos.to_csv(csv_data, index=False)
+        csv_data.write("\n=== CITAS ===\n")
+        df_citas.to_csv(csv_data, index=False)
+        csv_data.seek(0)
+        return send_file(io.BytesIO(csv_data.getvalue().encode("utf-8")),
                          as_attachment=True, download_name="hospital_datos.csv",
                          mimetype="text/csv")
+
     else:
-        return jsonify({"error": "Formato no válido"}), 400
+        return jsonify({"error": "Formato no válido (usa /excel o /csv)"}), 400
+
 
 if __name__ == "__main__":
     print("🚀 Servidor corriendo en http://127.0.0.1:5000")

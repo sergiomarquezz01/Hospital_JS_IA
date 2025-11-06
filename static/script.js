@@ -213,3 +213,23 @@ function limpiarCampos(tipo) {
     document.getElementById("motivoCita").value = "";
   }
 }
+
+async function exportarDatos(tipo) {
+  try {
+    const res = await fetch(`/api/export/${tipo}`);
+    if (!res.ok) throw new Error("Error al exportar los datos");
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = tipo === "excel" ? "hospital_datos.xlsx" : "hospital_datos.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    alert("❌ No se pudo exportar los datos");
+    console.error(err);
+  }
+}
