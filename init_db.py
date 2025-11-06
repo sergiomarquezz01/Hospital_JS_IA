@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS citas (
 );
 """)
 
-# Datos ejemplo: 20 pacientes
+
 pacientes = [
     ("Ana López",34,"12345678A"),("Carlos Ramírez",45,"23456789B"),("María Pérez",29,"34567890C"),
     ("José Martínez",51,"45678901D"),("Lucía Fernández",38,"56789012E"),("Antonio García",47,"67890123F"),
@@ -55,7 +55,7 @@ pacientes = [
 
 c.executemany("INSERT INTO pacientes (nombre, edad, dni) VALUES (?, ?, ?);", pacientes)
 
-# 10 médicos
+
 medicos = [
     ("Dr. Juan Pérez","Cardiología","951123001"),
     ("Dra. Marta López","Pediatría","951123002"),

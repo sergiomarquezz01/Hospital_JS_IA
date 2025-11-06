@@ -1,44 +1,90 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hospital Málaga - Sistema de Gestión (con Stats)</title>
- <link rel="stylesheet" href="static/style.css">
-  <!-- Chart.js -->
+  <meta charset="UTF-8">
+  <title>Hospital Málaga - Panel Principal</title>
+  <link rel="stylesheet" href="/static/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header>
-    <div class="brand">
-      <h1>🏥 Hospital Málaga</h1>
-      <small>Sistema de Gestión Integral</small>
-    </div>
-
-    <div class="header-controls">
-      <button class="nav-btn" onclick="mostrarSeccion('panel')">Panel</button>
-      <button class="nav-btn" onclick="mostrarSeccion('pacientes')">Pacientes</button>
-      <button class="nav-btn" onclick="mostrarSeccion('medicos')">Médicos</button>
-      <button class="nav-btn" onclick="mostrarSeccion('citas')">Citas</button>
-      <button class="nav-btn" onclick="mostrarSeccion('estadisticas')">Estadísticas</button>
-      <div class="right-controls">
-        <button id="exportBtn" class="small-btn" onclick="exportCurrent()">Exportar (CSV/XLS)</button>
-        <button id="darkToggle" class="small-btn" onclick="toggleDark()">🌙</button>
-      </div>
-    </div>
+    <h1>🏥 Hospital Málaga</h1>
+    <p>Gestión de Pacientes, Médicos y Citas</p>
   </header>
 
-  <section id="buscador">
-    <input type="text" id="searchInput" placeholder="🔍 Buscar..." oninput="buscar()" />
-    <select id="filtroSelect" onchange="filtrar()"></select>
-  </section>
+  <main>
+   
+    <section class="panel">
+      <h2>👩‍⚕️ Pacientes</h2>
+      <div class="formulario">
+        <input type="text" id="nombrePaciente" placeholder="Nombre">
+        <input type="number" id="edadPaciente" placeholder="Edad">
+        <input type="text" id="dniPaciente" placeholder="DNI">
+        <button onclick="agregarPaciente()">Añadir Paciente</button>
+      </div>
 
-  <main id="contenido"></main>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Nombre</th><th>Edad</th><th>DNI</th></tr>
+        </thead>
+        <tbody id="tabla-pacientes"></tbody>
+      </table>
+    </section>
+
+ 
+    <section class="panel">
+      <h2>🩺 Médicos</h2>
+      <div class="formulario">
+        <input type="text" id="nombreMedico" placeholder="Nombre">
+        <input type="text" id="especialidadMedico" placeholder="Especialidad">
+        <button onclick="agregarMedico()">Añadir Médico</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Nombre</th><th>Especialidad</th></tr>
+        </thead>
+        <tbody id="tabla-medicos"></tbody>
+      </table>
+    </section>
+
+   
+    <section class="panel">
+      <h2>📅 Citas</h2>
+      <div class="formulario">
+        <input type="text" id="pacienteCita" placeholder="Nombre del Paciente">
+        <input type="text" id="medicoCita" placeholder="Nombre del Médico">
+        <input type="date" id="fechaCita">
+        <input type="text" id="motivoCita" placeholder="Motivo de la cita">
+        <button onclick="agregarCita()">Añadir Cita</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Paciente</th><th>Médico</th><th>Fecha</th><th>Motivo</th></tr>
+        </thead>
+        <tbody id="tabla-citas"></tbody>
+      </table>
+    </section>
+
+
+    <section class="panel">
+      <h2>📊 Estadísticas</h2>
+      <div class="graficas">
+        <div class="grafica">
+          <canvas id="graficaPacientes"></canvas>
+        </div>
+        <div class="grafica">
+          <canvas id="graficaCitas"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
 
   <footer>
-    <p>© 2025 Hospital Málaga — Sistema de Gestión</p>
+    <p>Desarrollado con ❤️ - Proyecto Hospital Málaga 2025</p>
   </footer>
 
- <script src="static/script.js" defer></script>
+  <script src="/static/script.js"></script>
 </body>
 </html>

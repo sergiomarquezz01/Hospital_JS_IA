@@ -18,22 +18,22 @@ def load_citas():
       FROM citas
     """, conn)
     conn.close()
-    # ensure fecha is a date
+   
     df['fecha'] = pd.to_datetime(df['fecha']).dt.date
     return df
 
 def build_daily_counts(df):
-    # Count number of citas per day
+  
     counts = df.groupby('fecha').size().rename('count').reset_index()
     counts['fecha'] = pd.to_datetime(counts['fecha'])
     return counts
 
 def make_features(df):
     df = df.copy()
-    df['dow'] = df['fecha'].dt.weekday  # 0=Mon
+    df['dow'] = df['fecha'].dt.weekda
     df['day'] = df['fecha'].dt.day
     df['month'] = df['fecha'].dt.month
-    # optionally lag features
+    
     df['count_lag1'] = df['count'].shift(1).fillna(method='bfill')
     df['count_lag7'] = df['count'].shift(7).fillna(method='bfill')
     return df
@@ -42,7 +42,7 @@ def train_and_save():
     df_raw = load_citas()
     counts = build_daily_counts(df_raw)
 
-    # If dataset too small, create a continuous date range filling zeros for missing days
+
     date_range = pd.date_range(counts['fecha'].min(), counts['fecha'].max())
     counts = counts.set_index('fecha').reindex(date_range, fill_value=0).rename_axis('fecha').reset_index()
     counts['count'] = counts['count'].astype(int)

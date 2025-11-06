@@ -1,172 +1,215 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_file, send_from_directory
 from flask_cors import CORS
 import random
+import io
+import pandas as pd
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 CORS(app)
 
 # ======================================================
-# DATOS INICIALES
+# DATOS SIMULADOS DE LA BASE DE DATOS
 # ======================================================
 
 pacientes = [
-    {"id": 1, "nombre": "Ana López", "edad": 32, "dni": "12345678A"},
-    {"id": 2, "nombre": "Carlos Ramírez", "edad": 45, "dni": "23456789B"},
-    {"id": 3, "nombre": "María Pérez", "edad": 28, "dni": "34567890C"},
-    {"id": 4, "nombre": "José Martínez", "edad": 51, "dni": "45678901D"},
-    {"id": 5, "nombre": "Lucía Fernández", "edad": 37, "dni": "56789012E"},
-    {"id": 6, "nombre": "Antonio García", "edad": 41, "dni": "67890123F"},
-    {"id": 7, "nombre": "Laura Ruiz", "edad": 25, "dni": "78901234G"},
-    {"id": 8, "nombre": "Pedro Jiménez", "edad": 39, "dni": "89012345H"},
-    {"id": 9, "nombre": "Marta Castillo", "edad": 29, "dni": "90123456I"},
-    {"id": 10, "nombre": "David Torres", "edad": 34, "dni": "01234567J"},
-    {"id": 11, "nombre": "Rosa Morales", "edad": 48, "dni": "11223344K"},
-    {"id": 12, "nombre": "Sergio Navarro", "edad": 33, "dni": "22334455L"},
-    {"id": 13, "nombre": "Patricia Vega", "edad": 30, "dni": "33445566M"},
-    {"id": 14, "nombre": "Javier Herrera", "edad": 47, "dni": "44556677N"},
-    {"id": 15, "nombre": "Cristina Díaz", "edad": 27, "dni": "55667788O"},
-    {"id": 16, "nombre": "Andrés Molina", "edad": 36, "dni": "66778899P"},
-    {"id": 17, "nombre": "Silvia Rojas", "edad": 31, "dni": "77889900Q"},
-    {"id": 18, "nombre": "Raúl Gómez", "edad": 40, "dni": "88990011R"},
-    {"id": 19, "nombre": "Isabel Núñez", "edad": 44, "dni": "99001122S"},
-    {"id": 20, "nombre": "Tomás Peña", "edad": 52, "dni": "11112223T"},
-    {"id": 21, "nombre": "Sofía Ortega", "edad": 26, "dni": "12131415U"},
-    {"id": 22, "nombre": "Emilio Cabrera", "edad": 49, "dni": "13141516V"},
-    {"id": 23, "nombre": "Teresa León", "edad": 42, "dni": "14151617W"},
-    {"id": 24, "nombre": "Fernando Blanco", "edad": 38, "dni": "15161718X"},
-    {"id": 25, "nombre": "Beatriz Romero", "edad": 35, "dni": "16171819Y"},
-    {"id": 26, "nombre": "Pablo Herrera", "edad": 46, "dni": "17181920Z"},
-    {"id": 27, "nombre": "Natalia Cano", "edad": 29, "dni": "18192021A"},
-    {"id": 28, "nombre": "Óscar Serrano", "edad": 50, "dni": "19202122B"},
-    {"id": 29, "nombre": "Elena Ruiz", "edad": 33, "dni": "20212223C"},
-    {"id": 30, "nombre": "Gabriel Vidal", "edad": 39, "dni": "21222324D"},
+    {"id": 1, "nombre": "Laura Gómez", "edad": 32, "dni": "12345678A"},
+    {"id": 2, "nombre": "Carlos Ruiz", "edad": 41, "dni": "98765432B"},
+    {"id": 3, "nombre": "María López", "edad": 29, "dni": "45612378C"},
+    {"id": 4, "nombre": "Javier Ortega", "edad": 52, "dni": "74125896D"},
+    {"id": 5, "nombre": "Sofía Molina", "edad": 38, "dni": "85296374E"},
+    {"id": 6, "nombre": "Antonio Herrera", "edad": 65, "dni": "96374125F"},
+    {"id": 7, "nombre": "Lucía Fernández", "edad": 27, "dni": "35795128G"},
+    {"id": 8, "nombre": "Pedro Gutiérrez", "edad": 45, "dni": "15975364H"},
+    {"id": 9, "nombre": "Raquel Pérez", "edad": 36, "dni": "25874196I"},
+    {"id": 10, "nombre": "Diego Navarro", "edad": 54, "dni": "75395146J"},
+    {"id": 11, "nombre": "Elena Vargas", "edad": 22, "dni": "10293847K"},
+    {"id": 12, "nombre": "Gabriel Soto", "edad": 70, "dni": "47382910L"},
+    {"id": 13, "nombre": "Irene Torres", "edad": 48, "dni": "65432109M"},
+    {"id": 14, "nombre": "Marcos Gil", "edad": 33, "dni": "34567890N"},
+    {"id": 15, "nombre": "Nerea Rivas", "edad": 59, "dni": "78901234O"},
+    {"id": 16, "nombre": "Óscar Prieto", "edad": 25, "dni": "21098765P"},
+    {"id": 17, "nombre": "Paula Castro", "edad": 61, "dni": "56789012Q"},
+    {"id": 18, "nombre": "Quique Sanz", "edad": 19, "dni": "89012345R"},
+    {"id": 19, "nombre": "Rosa Fuentes", "edad": 44, "dni": "11223344S"},
+    {"id": 20, "nombre": "Samuel León", "edad": 50, "dni": "99887766T"},
+    {"id": 21, "nombre": "Teresa Mora", "edad": 30, "dni": "54321098U"},
+    {"id": 22, "nombre": "Vicente Cruz", "edad": 75, "dni": "87654321V"},
+    {"id": 23, "nombre": "Yolanda Salas", "edad": 28, "dni": "23456789W"},
+    {"id": 24, "nombre": "Ángel Martín", "edad": 49, "dni": "67890123X"},
+    {"id": 25, "nombre": "Berta Díaz", "edad": 56, "dni": "13579246Y"},
+    {"id": 26, "nombre": "Camilo Vera", "edad": 39, "dni": "97531864Z"},
+    {"id": 27, "nombre": "Diana Lemos", "edad": 68, "dni": "36925814A"},
+    {"id": 28, "nombre": "Ernesto Ramos", "edad": 24, "dni": "70147258B"},
+    {"id": 29, "nombre": "Fátima Noguera", "edad": 51, "dni": "48291037C"},
+    {"id": 30, "nombre": "Gonzalo Ferrer", "edad": 43, "dni": "91028374D"},
+    {"id": 31, "nombre": "Héctor Vidal", "edad": 35, "dni": "62738495E"},
+    {"id": 32, "nombre": "Inés Bravo", "edad": 63, "dni": "19283746F"},
+    {"id": 33, "nombre": "Juan Gallardo", "edad": 26, "dni": "53421678G"},
+    {"id": 34, "nombre": "Kira Montes", "edad": 40, "dni": "84756910H"},
+    {"id": 35, "nombre": "Leo Núñez", "edad": 72, "dni": "26173849I"},
+    {"id": 36, "nombre": "Mónica Rico", "edad": 31, "dni": "70392817J"},
+    {"id": 37, "nombre": "Nico Alarcón", "edad": 57, "dni": "45670123K"},
+    {"id": 38, "nombre": "Olga Benítez", "edad": 20, "dni": "90123456L"},
+    {"id": 39, "nombre": "Pablo Moya", "edad": 69, "dni": "34567891M"},
+    {"id": 40, "nombre": "Queralt Marín", "edad": 46, "dni": "12345670N"},
+    {"id": 41, "nombre": "Ramón Soto", "edad": 55, "dni": "87654320O"},
+    {"id": 42, "nombre": "Sara Pardo", "edad": 23, "dni": "21098760P"},
+    {"id": 43, "nombre": "Tomás Heredia", "edad": 60, "dni": "56789010Q"},
+    {"id": 44, "nombre": "Úrsula Vives", "edad": 37, "dni": "89012340R"},
+    {"id": 45, "nombre": "Víctor Melián", "edad": 71, "dni": "11223340S"},
+    {"id": 46, "nombre": "Wendy Roca", "edad": 42, "dni": "99887760T"},
+    {"id": 47, "nombre": "Xavi Ferrer", "edad": 34, "dni": "54321090U"},
+    {"id": 48, "nombre": "Yurena Gil", "edad": 66, "dni": "87654320V"},
+    {"id": 49, "nombre": "Zoe Pardo", "edad": 21, "dni": "23456780W"},
+    {"id": 50, "nombre": "Adrián Santos", "edad": 53, "dni": "67890120X"},
+    {"id": 51, "nombre": "Blanca Ramos", "edad": 47, "dni": "13579240Y"},
+    {"id": 52, "nombre": "César Montes", "edad": 62, "dni": "97531860Z"},
+    {"id": 53, "nombre": "Dana Vidal", "edad": 27, "dni": "36925810A"},
+    {"id": 54, "nombre": "Elías Bravo", "edad": 73, "dni": "70147250B"},
+    {"id": 55, "nombre": "Gema Rojas", "edad": 38, "dni": "48291030C"},
+    {"id": 56, "nombre": "Hugo Déniz", "edad": 58, "dni": "91028370D"},
+    {"id": 57, "nombre": "Iris Soler", "edad": 29, "dni": "62738490E"},
+    {"id": 58, "nombre": "Joel Pérez", "edad": 64, "dni": "19283740F"},
+    {"id": 59, "nombre": "Lidia Torres", "edad": 33, "dni": "53421670G"},
+    {"id": 60, "nombre": "Mario Vega", "edad": 50, "dni": "84756910H"},
 ]
-
 medicos = [
-    {"id": 1, "nombre": "Dr. José Sánchez", "especialidad": "Cardiología"},
-    {"id": 2, "nombre": "Dra. Marta González", "especialidad": "Pediatría"},
-    {"id": 3, "nombre": "Dr. Luis Romero", "especialidad": "Neurología"},
-    {"id": 4, "nombre": "Dra. Ana Torres", "especialidad": "Dermatología"},
-    {"id": 5, "nombre": "Dr. Juan Pérez", "especialidad": "Traumatología"},
-    {"id": 6, "nombre": "Dra. Laura Rivas", "especialidad": "Ginecología"},
-    {"id": 7, "nombre": "Dr. Alberto López", "especialidad": "Psiquiatría"},
-    {"id": 8, "nombre": "Dr. Enrique Ortega", "especialidad": "Oftalmología"},
-    {"id": 9, "nombre": "Dra. Paula Navarro", "especialidad": "Oncología"},
-    {"id": 10, "nombre": "Dr. Javier Marín", "especialidad": "Endocrinología"},
+    {"id": 1, "nombre": "Dr. Manuel Torres", "especialidad": "Cardiología"},
+    {"id": 2, "nombre": "Dra. Ana López", "especialidad": "Pediatría"},
+    {"id": 3, "nombre": "Dr. Jorge Sánchez", "especialidad": "Neurología"},
+    {"id": 4, "nombre": "Dra. Carmen Díaz", "especialidad": "Dermatología"},
+    {"id": 5, "nombre": "Dr. José Martín", "especialidad": "Traumatología"},
+    {"id": 6, "nombre": "Dra. Silvia Moreno", "especialidad": "Oncología"},
+    {"id": 7, "nombre": "Dr. Luis Pérez", "especialidad": "Psiquiatría"},
+    {"id": 8, "nombre": "Dra. Marta González", "especialidad": "Ginecología"},
+    {"id": 9, "nombre": "Dr. Enrique Rojas", "especialidad": "Urología"},
+    {"id": 10, "nombre": "Dra. Clara Navarro", "especialidad": "Medicina Interna"},
+    {"id": 11, "nombre": "Dr. Ricardo Vega", "especialidad": "Oftalmología"},
+    {"id": 12, "nombre": "Dra. Elena Rubio", "especialidad": "Endocrinología"},
+    {"id": 13, "nombre": "Dr. Pablo Gil", "especialidad": "Neumología"},
+    {"id": 14, "nombre": "Dra. Isabel Castro", "especialidad": "Reumatología"},
+    {"id": 15, "nombre": "Dr. Francisco Soler", "especialidad": "Cirugía General"},
+    {"id": 16, "nombre": "Dra. Victoria Rey", "especialidad": "Hematología"},
+    {"id": 17, "nombre": "Dr. Andrés Molina", "especialidad": "Nefrología"},
+    {"id": 18, "nombre": "Dra. Nuria Prieto", "especialidad": "Otorrinolaringología"},
+    {"id": 19, "nombre": "Dr. Sergio Bravo", "especialidad": "Gastroenterología"},
+    {"id": 20, "nombre": "Dra. Rosa Jiménez", "especialidad": "Anestesiología"},
 ]
 
-citas = [
-    {"id": 1, "paciente": "Ana López", "medico": "Dr. José Sánchez", "fecha": "2025-11-04", "motivo": "Chequeo anual"},
-    {"id": 2, "paciente": "Carlos Ramírez", "medico": "Dra. Marta González", "fecha": "2025-11-05", "motivo": "Dolor de garganta"},
-    {"id": 3, "paciente": "María Pérez", "medico": "Dr. Luis Romero", "fecha": "2025-11-06", "motivo": "Dolor de cabeza"},
-    {"id": 4, "paciente": "Lucía Fernández", "medico": "Dra. Ana Torres", "fecha": "2025-11-07", "motivo": "Revisión dermatológica"},
-    {"id": 5, "paciente": "José Martínez", "medico": "Dr. Juan Pérez", "fecha": "2025-11-08", "motivo": "Lesión muscular"},
-    {"id": 6, "paciente": "Laura Ruiz", "medico": "Dra. Laura Rivas", "fecha": "2025-11-09", "motivo": "Control ginecológico"},
-    {"id": 7, "paciente": "David Torres", "medico": "Dr. Alberto López", "fecha": "2025-11-10", "motivo": "Ansiedad"},
-    {"id": 8, "paciente": "Antonio García", "medico": "Dr. Enrique Ortega", "fecha": "2025-11-11", "motivo": "Problemas de visión"},
-    {"id": 9, "paciente": "Marta Castillo", "medico": "Dra. Paula Navarro", "fecha": "2025-11-12", "motivo": "Seguimiento oncológico"},
-    {"id": 10, "paciente": "Rosa Morales", "medico": "Dr. Javier Marín", "fecha": "2025-11-13", "motivo": "Chequeo endocrino"},
-]
 
-# ======================================================
-# ENDPOINTS DE API
-# ======================================================
-
-@app.route("/api/pacientes", methods=["GET"])
-def get_pacientes():
-    return jsonify(pacientes)
-
-@app.route("/api/medicos", methods=["GET"])
-def get_medicos():
-    return jsonify(medicos)
-
-@app.route("/api/citas", methods=["GET"])
-def get_citas():
-    return jsonify(citas)
-
-# ================== AÑADIR (POST) ====================
-
-@app.route("/api/pacientes", methods=["POST"])
-def add_paciente():
-    data = request.get_json()
-    nuevo = {
-        "id": len(pacientes) + 1,
-        "nombre": data.get("nombre"),
-        "edad": data.get("edad"),
-        "dni": data.get("dni")
-    }
-    pacientes.append(nuevo)
-    return jsonify({"message": "✅ Paciente añadido correctamente", "paciente": nuevo}), 201
-
-@app.route("/api/medicos", methods=["POST"])
-def add_medico():
-    data = request.get_json()
-    nuevo = {
-        "id": len(medicos) + 1,
-        "nombre": data.get("nombre"),
-        "especialidad": data.get("especialidad")
-    }
-    medicos.append(nuevo)
-    return jsonify({"message": "✅ Médico añadido correctamente", "medico": nuevo}), 201
-
-@app.route("/api/citas", methods=["POST"])
-def add_cita():
-    data = request.get_json()
-    nuevo = {
-        "id": len(citas) + 1,
-        "paciente": data.get("paciente"),
-        "medico": data.get("medico"),
-        "fecha": data.get("fecha"),
-        "motivo": data.get("motivo")
-    }
-    citas.append(nuevo)
-    return jsonify({"message": "✅ Cita añadida correctamente", "cita": nuevo}), 201
-
-# ======================================================
-# ENDPOINT IA PREDICTIVA
-# ======================================================
-@app.route("/api/predict", methods=["GET"])
-def predict():
-    """
-    Simula una predicción basada en los datos actuales.
-    Ejemplo: si hay muchas citas por médico, alerta de saturación.
-    """
-    num_pacientes = len(pacientes)
-    num_medicos = len(medicos)
-    num_citas = len(citas)
-
-    if num_medicos == 0:
-        prediccion = "⚠️ No hay médicos disponibles."
-        mensaje = "Añada médicos para atender las citas."
-    else:
-        carga = num_citas / num_medicos
-        if carga < 3:
-            prediccion = "✅ Hospital estable"
-            mensaje = f"Carga media por médico: {carga:.2f} citas."
-        elif carga < 6:
-            prediccion = "⚠️ Alta demanda"
-            mensaje = f"Carga media por médico: {carga:.2f} citas. Se recomienda incorporar más personal."
-        else:
-            prediccion = "🚨 Riesgo de colapso"
-            mensaje = f"Cada médico tiene más de {carga:.2f} citas en promedio."
-
-    return jsonify({
-        "prediccion": prediccion,
-        "mensaje": mensaje,
-        "num_pacientes": num_pacientes,
-        "num_medicos": num_medicos,
-        "num_citas": num_citas
+citas = []
+for i in range(1, 61):  
+    paciente = random.choice(pacientes)
+    medico = random.choice(medicos)
+    citas.append({
+        "id": i,
+        "paciente": paciente["nombre"],
+        "medico": medico["nombre"],
+        "fecha": f"2025-11-{random.randint(1, 30):02d}",
+        "motivo": random.choice(["Revisión", "Dolor", "Consulta general", "Seguimiento", "Análisis", "Vacunación"])
     })
 
-# ======================================================
-# RUTA PRINCIPAL PARA MOSTRAR LA WEB
-# ======================================================
+
+
 @app.route("/")
 def home():
     return send_from_directory("static", "index.html")
 
-# ======================================================
-# MAIN
-# ======================================================
+@app.route("/api/pacientes", methods=["GET", "POST"])
+def handle_pacientes():
+    if request.method == "POST":
+        data = request.get_json()
+        nuevo = {
+            "id": len(pacientes) + 1,
+            "nombre": data["nombre"],
+            "edad": data["edad"],
+            "dni": data["dni"]
+        }
+        pacientes.append(nuevo)
+        return jsonify({"message": "Paciente añadido", "paciente": nuevo}), 201
+    return jsonify(pacientes)
+
+@app.route("/api/medicos", methods=["GET", "POST"])
+def handle_medicos():
+    if request.method == "POST":
+        data = request.get_json()
+        nuevo = {
+            "id": len(medicos) + 1,
+            "nombre": data["nombre"],
+            "especialidad": data["especialidad"]
+        }
+        medicos.append(nuevo)
+        return jsonify({"message": "Médico añadido", "medico": nuevo}), 201
+    return jsonify(medicos)
+
+@app.route("/api/citas", methods=["GET", "POST"])
+def handle_citas():
+    if request.method == "POST":
+        data = request.get_json()
+        nuevo = {
+            "id": len(citas) + 1,
+            "paciente": data["paciente"],
+            "medico": data["medico"],
+            "fecha": data["fecha"],
+            "motivo": data["motivo"]
+        }
+        citas.append(nuevo)
+        return jsonify({"message": "Cita añadida", "cita": nuevo}), 201
+    return jsonify(citas)
+
+@app.route("/api/predict", methods=["GET"])
+def predict_ia():
+    num_citas = len(citas)
+    num_medicos = len(medicos)
+    num_pacientes = len(pacientes)
+
+    if num_medicos == 0:
+        nivel = 0
+    else:
+        nivel = min(1.0, num_citas / (num_medicos * 5))
+
+    if nivel < 0.4:
+        estado, color = "Bajo", "green"
+    elif nivel < 0.7:
+        estado, color = "Moderado", "orange"
+    else:
+        estado, color = "Alto", "red"
+
+    return jsonify({
+        "nivel": nivel,
+        "estado": estado,
+        "color": color,
+        "num_citas": num_citas,
+        "num_medicos": num_medicos,
+        "num_pacientes": num_pacientes
+    })
+
+@app.route("/api/export/<tipo>")
+def export(tipo):
+    buffer = io.BytesIO()
+    df1 = pd.DataFrame(pacientes)
+    df2 = pd.DataFrame(medicos)
+    df3 = pd.DataFrame(citas)
+
+    if tipo == "excel":
+        with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+            df1.to_excel(writer, index=False, sheet_name="Pacientes")
+            df2.to_excel(writer, index=False, sheet_name="Medicos")
+            df3.to_excel(writer, index=False, sheet_name="Citas")
+        buffer.seek(0)
+        return send_file(buffer, as_attachment=True, download_name="hospital_datos.xlsx")
+    elif tipo == "csv":
+        csv = io.StringIO()
+        df1.to_csv(csv, index=False)
+        df2.to_csv(csv, index=False)
+        df3.to_csv(csv, index=False)
+        csv.seek(0)
+        return send_file(io.BytesIO(csv.getvalue().encode("utf-8")),
+                         as_attachment=True, download_name="hospital_datos.csv",
+                         mimetype="text/csv")
+    else:
+        return jsonify({"error": "Formato no válido"}), 400
+
 if __name__ == "__main__":
+    print("🚀 Servidor corriendo en http://127.0.0.1:5000")
     app.run(debug=True, port=5000)
